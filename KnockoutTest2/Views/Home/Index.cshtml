@@ -1,0 +1,132 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<style type="text/css">
+    .tag-delete {
+    }
+
+    .tag-edit {
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-12">
+        <label>First Name:</label><input type="text" data-bind="value: firstNameToAdd" /><br />
+        <label>Last Name:</label><input type="text" data-bind="value: lastNameToAdd" /><br />
+        <button data-bind="click: addPerson">Add person</button>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <ul data-bind="foreach: persons">
+            <li data-bind="click: $parent.selectPerson">
+                <span data-bind="text: firstName"></span>
+                <span> </span>
+                <span data-bind="text: lastName"></span>
+                <a href="#" class="tag-edit">Edit</a>
+                <a href="#" class="tag-delete">Delete</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div id="tagDialog" data-bind="with: selectedPerson">
+    First name: <input type="text" data-bind="value: firstName" />
+    <br />
+    Last name: <input type="text" data-bind="value: lastName" />
+    test
+</div>
+
+<script src="~/Scripts/jquery-1.10.2.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.js"></script>
+<script src="~/Scripts/knockout-3.1.0.js"></script>
+<script src="~/Scripts/ko-protected-observable.js"></script>
+<script src="~/Scripts/ajax-utils.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $.getJSON("/api/Persons", function (personsArr) {
+
+            //var personArr = [];
+
+            //data.each(function(item) {
+            //    personArr.push(new person(item.firstName, item.lastName));
+            //});
+
+
+
+            //var personsArr = [new person("Jan", "Kowalski"), new person("John", "Smith"), new person("Adam", "Nowak")];
+
+            //var personsArr = [{ firstName: "Jan", lastName: "Kowalski" }, { firstName: "John", lastName: "Smith" }, { firstName: "Adam", lastName: "Nowak" }];
+
+            //function person(firstName, lastName) {
+            //    return {
+            //        firstName: ko.protectedObservable(firstName),
+            //        lastName: ko.protectedObservable(lastName)
+            //    };
+            //}
+
+
+            var myViewModel = {
+                firstNameToAdd: ko.observable(""),
+                lastNameToAdd: ko.observable(""),
+
+                addPerson: function () {
+                    //this.persons.push({firstName: this.firstNameToAdd(), lastName: this.lastNameToAdd()});//new person(this.firstNameToAdd(), this.lastNameToAdd()));
+                    var newPerson = { firstName: this.firstNameToAdd(), lastName: this.lastNameToAdd() };
+
+                    ajaxAdd("/api/Persons",ko.toJSON(newPerson), function () {
+                        myViewModel.persons.push(newPerson);
+                        this.firstNameToAdd("");
+                        this.lastNameToAdd("");
+                    });
+
+                    
+                },
+
+                selectedPerson: ko.observable(""),
+
+                selectPerson: function () {
+                    myViewModel.selectedPerson(this);
+                },
+
+                persons: ko.observableArray(ko.toProtectedObservableItemArray(personsArr))
+
+            };
+
+            $(document).on("click", ".tag-delete", function () {
+                var personToRemove = ko.dataFor(this);
+                myViewModel.persons.remove(personToRemove);
+            });
+
+            $(document).on("click", ".tag-edit", function () {
+                $("#tagDialog").dialog({
+                    width: 400,
+                    buttons: {
+                        Save: function () {
+                            
+                            myViewModel.selectedPerson().commit();
+                            $(this).dialog("close");
+                        },
+                        Cancel: function () { $(this).dialog("close"); }
+                    }
+                });
+            });
+
+
+            //function toPersonsArray(personsRawArray) {
+            //    var personsArray = ko.utils.arrayMap(personsRawArray, function (item) {
+            //        return new person(item.firstName, item.lastName);
+            //    });
+            //    return personsArray;
+            //}
+
+            ko.applyBindings(myViewModel);
+
+        });
+    });
+
+
+</script>
